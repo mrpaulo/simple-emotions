@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Gráfico das Emoções</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
+  <style type="text/css">
+    body {
+      background-color: #f5f5f5;
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      margin: 50px auto;
+      max-width: 600px;
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      border-radius: 5px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 32px;
+      margin: 0 0 20px;
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      font-size: 18px;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    input[type="number"] {
+      display: inline-block;
+      border: none;
+      border-radius: 5px;
+      padding: 5px;
+      box-shadow: 1px 1px 2px #ccc;
+      font-size: 18px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 30px;
+      -webkit-appearance: none;
+      background-color: #ddd;
+      border-radius: 5px;
+      outline: none;
+      margin-bottom: 20px;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 30px;
+      height: 30px;
+      background-color: #2196f3;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 30px;
+      height: 30px;
+      background-color: #2196f3;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    button {
+      display: block;
+      margin: 20px auto 0;
+      padding: 10px 20px;
+      border-radius: 5px;
+      border: none;
+      background-color: #2196f3;
+      color: #fff;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.2s ease-in-out;
+    }
+
+    button:hover {
+      background-color: #0d8bf3;
+    }
+
+    table {
+      margin-top: 50px;
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table th,
+    table td {
+      padding: 10px;
+      text-align: left;
+    }
+
+    table th {
+      border-bottom: 2px solid #ddd;
+      font-weight: bold;
+      font-size: 25px;
+    }
+
+    table td {
+      border-bottom: 1px solid #ddd;
+    }
+
+    #mensagem {
+      font-size: 32px;
+      font-weight: bold;
+      margin: 0;
+    }
+
+    .label-energy,
+    .label-satisfaction {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .label-energy label,
+    .label-satisfaction label {
+      font-size: 18px;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+
+    .label-energy input[type="number"],
+    .label-satisfaction input[type="number"] {
+      display: inline-block;
+      border: none;
+      border-radius: 5px;
+      padding: 5px;
+      box-shadow: 1px 1px 2px #ccc;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .modalEmail {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .modal-content {
+      background-color: #fff;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 600px;
+    }
+
+    .modalEmail-content {
+      background-color: #fff;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 600px;
+    }
+
+    .close-btn {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .close-btn:hover,
+    .close-btn:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Gráfico das Emoções</h1>
+    <h3>De 0 até 10 como está sua energia e satisfação hoje?</h3>
+    <div class="label-energy">
+      <label for="energy">Energia:</label>
+      <input type="number" id="energy-number" min="1" max="10" value="1" onChange="updateEnergyRange(this.value);">
+    </div>
+    <input type="range" id="energy" min="1" max="10" value="1" onChange="updateEnergyValue(this.value);">
+    <br />
+    <div class="label-satisfaction">
+      <label for="satisfaction">Satisfação:</label>
+      <input type="number" id="satisfaction-number" min="1" max="10" value="1"
+        onChange="updateSatisfactionRange(this.value);">
+    </div>
+    <input type="range" id="satisfaction" min="1" max="10" value="1" onChange="updateSatisfactionValue(this.value);">
+    <br />
+    <button onclick="calcularMensagem()">Calcular mensagem</button>
+  </div>
+
+  <div class="modal">
+    <div class="modal-content">
+      <span class="close-btn">&times;</span>
+      <table>
+        <thead>
+          <tr>
+            <th>Emoção</th>
+            <th>Descrição</th>
+          </tr>
+          <tr>
+            <th>
+              <p id="mensagem"></p>
+            </th>
+            <th>
+              <p id="descricao"></p>
+            </th>
+            <th>
+              <p id="emoji"></p>
+            </th>
+          </tr>
+        </thead>
+        <tbody id="tabela-mensagens">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="modalEmail">
+    <div class="modalEmail-content">
+      <span class="closeEmail-btn">&times;</span>
+      <table>
+        <thead>
+          <tr>
+            <th>Preencha seu Email</th>
+          </tr>
+          <tr>
+            <th>
+              <input type="email" id="emailUserInput">
+            </th>
+          </tr>
+        </thead>
+      </table>
+      <br />
+      <button onclick="salvarEmailUser()">Ok</button>
+    </div>
+  </div>
+  <script>
+    function updateEnergyValue(val) {
+      document.getElementById('energy').textContent = val;
+      document.getElementById('energy-number').value = val;
+    }
+
+    function updateEnergyRange(val) {
+      document.getElementById('energy-number').textContent = val;
+      document.getElementById('energy').value = val;
+    }
+
+    function updateSatisfactionValue(val) {
+      document.getElementById('satisfaction').textContent = val;
+      document.getElementById('satisfaction-number').value = val;
+    }
+
+    function updateSatisfactionRange(val) {
+      document.getElementById('satisfaction-number').textContent = val;
+      document.getElementById('satisfaction').value = val;
+    }
+
+    const modal = document.querySelector('.modal');
+    const closeBtn = document.querySelector('.close-btn');
+
+
+    function openModal() {
+      modal.style.display = 'block';
+    }
+
+    function closeModal() {
+      modal.style.display = 'none';
+    }
+
+    document.querySelector('button').addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
+    window.addEventListener('click', (event) => {
+      if (event.target == modal) {
+        closeModal();
+      }
+    });
+
+    const modalEmail = document.querySelector('.modalEmail');
+    const closeEmailBtn = document.querySelector('.closeEmail-btn');
+
+    function openEmailModal() {
+      modalEmail.style.display = 'block';
+    }
+
+    function closeEmailModal() {
+      modalEmail.style.display = 'none';
+    }
+
+    closeEmailBtn.addEventListener('click', closeEmailModal);
+    window.addEventListener('click', (event) => {
+      if (event.target == modal) {
+        closeEmailModal();
+      }
+    });
+
+    function salvarEmailUser() {
+      const emailUserInput = document.getElementById('emailUserInput').value
+      if (emailUserInput) {
+        localStorage.setItem('userEmail', emailUserInput);
+      } else {
+        alert("Email inválido!")
+      }
+      closeEmailModal()
+      openModal();
+      enviarInformacoesDoUser()
+    }
+
+    function calcularMensagem() {
+      const energy = parseInt(document.getElementById("energy").value);
+      const satisfaction = parseInt(document.getElementById("satisfaction").value);
+
+      Papa.parse("data.csv", {
+        download: true,
+        header: true,
+        complete: function (results) {
+          const message = results.data.find(m => m.energy_key == energy && m.satisfaction_key == satisfaction);
+          const mensagem = message ? message.emotion : "Mensagem não encontrada";
+          const descricao = message ? message.description : "";
+          const emoji = message ? message.emoji : "";
+          const corFundo = message ? message.color : "#fff";
+
+          carregarEmocaoSession(energy, satisfaction, mensagem, descricao, emoji, corFundo);
+
+          const emailUserSalvo = localStorage.getItem('userEmail');
+          if (emailUserSalvo) {
+            openModal();
+            enviarInformacoesDoUser()
+          } else {
+            openEmailModal();
+          }
+
+        },
+        error: function (error) {
+          console.error(error);
+          document.getElementById("mensagem").textContent = "Erro ao ler o arquivo";
+        }
+      });
+    }
+
+    function carregarEmocaoSession(energy, satisfaction, mensagem, descricao, emoji, corFundo) {
+      document.getElementById("mensagem").textContent = mensagem;
+      document.getElementById("descricao").textContent = descricao;
+      document.getElementById("emoji").textContent = emoji;
+      const elementos = document.getElementsByClassName("modal-content");
+      for (let i = 0; i < elementos.length; i++) {
+        elementos[i].style.backgroundColor = corFundo;
+      }
+      var currentdate = new Date();
+      var datetime = currentdate.getDate() + "/"
+        + (currentdate.getMonth() + 1) + "/"
+        + currentdate.getFullYear() + " - "
+        + currentdate.getHours() + ":"
+        + currentdate.getMinutes()
+      sessionStorage.setItem('dataHora', datetime);
+      sessionStorage.setItem('energia', energy);
+      sessionStorage.setItem('satisfacao', satisfaction);
+      sessionStorage.setItem('mensagem', mensagem);
+      sessionStorage.setItem('descricao', descricao);
+      sessionStorage.setItem('emoji', emoji);
+      sessionStorage.setItem('corFundo', corFundo);
+    }
+
+    function enviarInformacoesDoUser() {
+      var dataHora = sessionStorage.getItem('dataHora');
+      var energia = sessionStorage.getItem('energia');
+      var satisfacao = sessionStorage.getItem('satisfacao');
+      var mensagem = sessionStorage.getItem('mensagem');
+      var descricao = sessionStorage.getItem('descricao');
+      var emoji = sessionStorage.getItem('emoji');
+      var corFundo = sessionStorage.getItem('corFundo');
+      var emailUserSalvo = localStorage.getItem('userEmail');
+      
+      console.log("Informaçoes")
+      console.log(emailUserSalvo + " -> " + dataHora + " - " +
+      " Energia: " + energia + " - " +
+      " Satisfacao: " +  satisfacao + " - " +
+      " Emocao: " +  mensagem )
+    }
+
+  </script>
+</body>
+
+</html>
